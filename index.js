@@ -1,10 +1,17 @@
 import SHA256 from 'crypto-js/sha256';
 
+class Transaction {
+  constructor(fromAddr, toAddr, amount) {
+    this.fromAddr = fromAddr;
+    this.toAddr = toAddr;
+    this.amount = amount;
+  }
+}
+
 class Block {
-  constructor(index, timeStamp, data, previousHash = '') {
-    this.index = index;
+  constructor(timeStamp, transactions, previousHash = '') {
     this.timeStamp = timeStamp;
-    this.data = data;
+    this.transactions = transactions;
     this.hash = this.calculateHash();
     this.previousHash = previousHash;
     this.nonce = 0;
@@ -16,16 +23,22 @@ class Block {
         + this.previousHash
         + this.timeStamp
         + this.nonce
-        + JSON.stringify(this.data)).toString();
+        + JSON.stringify(this.transactions)).toString();
   }
 
+  /**
+   * 
+   * 
+   * @param {int} difficulty 
+   * @memberof Block
+   */
   mineBlock(difficulty) {
-    console.time(`mining ${this.index}`);
+    console.time('mining');
     while (this.hash.substring(0, difficulty) !== new Array(difficulty + 1).join('0')) {
       this.nonce += 1;
       this.hash = this.calculateHash();
     }
-    console.timeEnd(`mining ${this.index}`);
+    console.timeEnd('mining');
     console.log(`Block Mines: ${this.hash}`);
   }
 }
@@ -33,11 +46,13 @@ class Block {
 class BlockChain {
   constructor() {
     this.chain = [BlockChain.createGenesisBlock()];
-    this.difficulty = 5;
+    this.difficulty = 4;
+    this.pendingTransactions = [];
+    this.miningReward = 100;
   }
 
   static createGenesisBlock() {
-    return new Block(0, 1522252337828, 'This is the first block', 0);
+    return new Block(1522252337828, 'This is the first block', 0);
   }
 
   getLatestBlock() {
@@ -45,12 +60,51 @@ class BlockChain {
   }
 
   // Adds new block to the block chain
-  addBlock(block) {
-    const newBlock = block;
-    newBlock.previousHash = this.getLatestBlock().hash;
-    newBlock.mineBlock(this.difficulty);
-    newBlock.hash = newBlock.calculateHash();
-    this.chain.push(newBlock);
+  // addBlock(block) {
+  //   const newBlock = block;
+  //   newBlock.previousHash = this.getLatestBlock().hash;
+  //   newBlock.mineBlock(this.difficulty);
+  //   newBlock.hash = newBlock.calculateHash();
+  //   this.chain.push(newBlock);
+  // }
+
+  /**
+   * 
+   * 
+   * @param {object} miningRewardAddr 
+   * @memberof BlockChain
+   */
+  minePendingTransations(miningRewardAddr) {
+    const block = new Block((new Date).getTime(), this.pendingTransactions);
+    block.mineBlock(this.difficulty);
+
+    console.log('Block Successfully Mined ... ');
+    this.chain.push(block);
+
+    this.pendingTransactions = [
+      new Transaction(null, miningRewardAddr, this.miningReward),
+    ];
+  }
+
+  createTransaction(transaction) {
+    this.pendingTransactions.push(transaction);    
+  }
+
+  getBalanceofAddress(address) {
+    let balance = 0;
+
+    for (const block of this.chain) {
+      for(const transaction of block.transactions) {
+        if (transaction.fromAddr === address){
+          balance -= transaction.amount;
+        }
+
+        if(transaction.toAddr === address) {
+          balance += transaction.amount
+        }
+      }
+    }
+    return balance;
   }
 
   // Checks for the validy of each block on the block chain
@@ -73,11 +127,22 @@ class BlockChain {
 
 const yoCoin = new BlockChain();
 
-console.log('Mining Block 1 ...');
-let block = new Block(1, 1522252339999, { amount: 4 });
-yoCoin.addBlock(block);
+yoCoin.createTransaction(new Transaction('address 1', 'address 2', 100));
+yoCoin.createTransaction(new Transaction('address 2', 'address 1', 70));
+yoCoin.createTransaction(new Transaction('address 1', 'address 3', 30));
 
-console.log('Mining Block 2 ...');
-block = new Block(2, 1522252339999, { amount: 10 });
-yoCoin.addBlock(block);
+console.log('\n start the mining...');
 
+yoCoin.minePendingTransations('subrats-address');
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('subrats-address')}`);
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('address 1')}`);
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('address 2')}`);
+
+console.log('\n start the mining again... ');
+
+yoCoin.minePendingTransations('subrats-address');
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('subrats-address')}`);
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('address 1')}`);
+console.log(`Your balance for mining yo coin: ${yoCoin.getBalanceofAddress('address 2')}`);
+
+console.log(JSON.stringify(yoCoin.chain, null, 4));
