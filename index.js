@@ -48,7 +48,7 @@ class BlockChain {
       if (currentBlock.hash !== currentBlock.calculateHash()) {
         return false;
       }
-      
+
       if (currentBlock.previousHash !== prevBlock.hash) {
         return false;
       }
@@ -63,6 +63,13 @@ yoCoin.addBlock(block);
 block = new Block(2, 1522252339999, { amount: 10 });
 yoCoin.addBlock(block);
 
+// Test for tampering tamperBlock
+const tamperBlockChain = (blockChain) => {
+  const Blockchain = blockChain;
+  Blockchain.chain[2].data = { amount: 100 };
+};
 
-console.log(yoCoin.isChainValid());
+console.log(`is Valid? ${yoCoin.isChainValid()}`);
+tamperBlockChain(yoCoin);
+console.log(`is Valid? ${yoCoin.isChainValid()}`);
 // console.log(JSON.stringify(yoCoin, null, 4));
