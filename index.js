@@ -7,6 +7,7 @@ class Block {
     this.data = data;
     this.hash = this.calculateHash();
     this.previousHash = previousHash;
+    this.nonce = 0;
   }
 
   // calculate the hash of the block
@@ -14,13 +15,25 @@ class Block {
     return SHA256(this.index
         + this.previousHash
         + this.timeStamp
+        + this.nonce
         + JSON.stringify(this.data)).toString();
+  }
+
+  mineBlock(difficulty) {
+    console.time(`mining ${this.index}`);
+    while (this.hash.substring(0, difficulty) !== new Array(difficulty + 1).join('0')) {
+      this.nonce += 1;
+      this.hash = this.calculateHash();
+    }
+    console.timeEnd(`mining ${this.index}`);
+    console.log(`Block Mines: ${this.hash}`);
   }
 }
 
 class BlockChain {
   constructor() {
     this.chain = [BlockChain.createGenesisBlock()];
+    this.difficulty = 5;
   }
 
   static createGenesisBlock() {
@@ -35,6 +48,7 @@ class BlockChain {
   addBlock(block) {
     const newBlock = block;
     newBlock.previousHash = this.getLatestBlock().hash;
+    newBlock.mineBlock(this.difficulty);
     newBlock.hash = newBlock.calculateHash();
     this.chain.push(newBlock);
   }
@@ -58,18 +72,12 @@ class BlockChain {
 }
 
 const yoCoin = new BlockChain();
+
+console.log('Mining Block 1 ...');
 let block = new Block(1, 1522252339999, { amount: 4 });
 yoCoin.addBlock(block);
+
+console.log('Mining Block 2 ...');
 block = new Block(2, 1522252339999, { amount: 10 });
 yoCoin.addBlock(block);
 
-// Test for tampering tamperBlock
-const tamperBlockChain = (blockChain) => {
-  const Blockchain = blockChain;
-  Blockchain.chain[2].data = { amount: 100 };
-};
-
-console.log(`is Valid? ${yoCoin.isChainValid()}`);
-tamperBlockChain(yoCoin);
-console.log(`is Valid? ${yoCoin.isChainValid()}`);
-// console.log(JSON.stringify(yoCoin, null, 4));
