@@ -31,11 +31,29 @@ class BlockChain {
     return this.chain[this.chain.length - 1];
   }
 
+  // Adds new block to the block chain
   addBlock(block) {
     const newBlock = block;
     newBlock.previousHash = this.getLatestBlock().hash;
     newBlock.hash = newBlock.calculateHash();
     this.chain.push(newBlock);
+  }
+
+  // Checks for the validy of each block on the block chain
+  isChainValid() {
+    for (let i = 1; i < this.chain.length; i += 1) {
+      const currentBlock = this.chain[i];
+      const prevBlock = this.chain[i - 1];
+
+      if (currentBlock.hash !== currentBlock.calculateHash()) {
+        return false;
+      }
+      
+      if (currentBlock.previousHash !== prevBlock.hash) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
@@ -45,4 +63,6 @@ yoCoin.addBlock(block);
 block = new Block(2, 1522252339999, { amount: 10 });
 yoCoin.addBlock(block);
 
-console.log(JSON.stringify(yoCoin, null, 4));
+
+console.log(yoCoin.isChainValid());
+// console.log(JSON.stringify(yoCoin, null, 4));
